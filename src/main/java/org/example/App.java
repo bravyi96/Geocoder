@@ -14,7 +14,7 @@ import java.util.Scanner;
 
 public class App {
     public static void main( String[] args ) throws IOException, ParseException {
-        System.out.print("\nВведите 1 - адрес или 2 - координаты: ");
+        System.out.print("\n1 - адрес, 2 - координаты: ");
         Scanner scanner = new Scanner(System.in);
         String mode = scanner.nextLine();
         String result;
@@ -67,7 +67,7 @@ public class App {
         Double latitude = (Double) jsonObject.get("Latitude");
         Double longitude = (Double) jsonObject.get("Longitude");
         result = latitude.toString() + ", " + longitude.toString();
-        return result;
+        return "Координаты: " + result;
     }
 
     private static String getAddress(String coords) {
