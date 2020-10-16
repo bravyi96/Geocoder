@@ -13,6 +13,12 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class App {
+
+    private enum GET_MODE {
+        COORDS,
+        ADDRESS
+    }
+
     public static void main( String[] args ) throws IOException, ParseException {
         System.out.print("\n1 - адрес, 2 - координаты: ");
         Scanner scanner = new Scanner(System.in);
@@ -21,10 +27,10 @@ public class App {
 
         if ("1".equals(mode)) {
             System.out.print("Введите адрес: ");
-            result = getCoords(scanner.nextLine());
+            result = geocode(scanner.nextLine(), GET_MODE.COORDS);
         } else if ("2".equals(mode)) {
             System.out.print("Введите координаты: ");
-            result = getAddress(scanner.nextLine());
+            result = geocode(scanner.nextLine(), GET_MODE.ADDRESS);
         } else {
             result = "Выбранного режима не существует!";
         }
@@ -32,12 +38,15 @@ public class App {
         System.out.println(result);
     }
 
-    private static String getCoords(String address) throws IOException, ParseException {
-        String host = "https://geocoder.ls.hereapi.com/6.2/geocode.json";
+    private static String geocode(String data, GET_MODE mode) throws IOException, ParseException {
+        String host;
+        if (GET_MODE.COORDS.equals(mode)) {host = "https://geocoder.ls.hereapi.com/6.2/geocode.json";
+        } else {host = "https://revgeocode.search.hereapi.com/v1/revgeocode";}
         Map<String, String> parameters = new HashMap<>();
         parameters.put("apiKey", "VKocMk0mLprngzh3wIavR57I3Clwi6Pb3sPEkTDgcPw");
-        parameters.put("searchtext", address.replaceAll("\\s", "+"));
         parameters.put("access_token", "eyJhbGciOiJSUzUxMiIsImN0eSI6IkpXVCIsImlzcyI6IkhFUkUiLCJhaWQiOiJMN1JkdWE4REhuODNZcWdnRElpdiIsImlhdCI6MTYwMjc4NTExMSwiZXhwIjoxNjAyODcxNTExLCJraWQiOiJqMSJ9.ZXlKaGJHY2lPaUprYVhJaUxDSmxibU1pT2lKQk1qVTJRMEpETFVoVE5URXlJbjAuLmVfYXdVNUhzcFV3Sk84X2hha0dzdHcuX0JZOUY0TFg3TkgyY2JETExnSkpQSUpzVEYwSVN6MGg2Q242ZWY1RDJ3QnlUamFPQWZURXBsVjJHX0tkVWFVbldRQy1fSGVSaEFqeEpHSkVsY1J2MVVjbkdnTk9nUFB4c1c3LXlfSW9zaTljODBUbjk2TEZGLUlaS09KWjZwbXBPSUZfUEJ6TGxqX20zNEs3a2hhcVNBLnhGcmtSdXd5ZXBwanNUVndwQmtOeVk4eHdLT0xtOFpkTHNiaWhQUVlGUXM.H8cP6Dbcs34e-V8JkOr2_Finomx0IS8tdA5OAR2Q_ZdkP622lOmrh-5U-SNdqeWo5PPt9I97IwD-kfQZ2DRTDUl1_w0J3go1EqyqnGmerFsXPKLJM_ta-KCKZKzvbxo1mE8SxrosfqSy064vhunNo_OInCf5o6_0DL4aKGf5qjokb7Szg9jA3apWIoT75Cq283MGQbp885mxorz8nLEthxOiXHeIgohMCM5fm5do-EaU879w_hm4loLzRMusrqGGrAaBaAKDO0mCnBPQQg0jVOgNyvqd7NBldCxoY_WZzJwNB1Bo9lANUmj4AL8ed1oCsr_Qn_JPVqcorlHZciNmGg");
+        if (GET_MODE.COORDS.equals(mode)) {parameters.put("searchtext", data.replaceAll("\\s", "+"));
+        } else {parameters.put("at", data.replaceAll("\\s", ","));}
         URL url = new URL(host + "?" + ParameterStringBuilder.getParamsString(parameters));
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestProperty("Content-Type", "application/json");
@@ -59,18 +68,19 @@ public class App {
         String result = content.toString();
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObject = (JSONObject) jsonParser.parse(result);
-        jsonObject = (JSONObject) jsonObject.get("Response");
-        jsonObject = (JSONObject) ((JSONArray) jsonObject.get("View")).get(0);
-        jsonObject = (JSONObject) ((JSONArray) jsonObject.get("Result")).get(0);
-        jsonObject = (JSONObject) jsonObject.get("Location");
-        jsonObject = (JSONObject) jsonObject.get("DisplayPosition");
-        Double latitude = (Double) jsonObject.get("Latitude");
-        Double longitude = (Double) jsonObject.get("Longitude");
-        result = latitude.toString() + ", " + longitude.toString();
-        return "Координаты: " + result;
-    }
-
-    private static String getAddress(String coords) {
-        return coords;
+        if (GET_MODE.COORDS.equals(mode)) {
+            jsonObject = (JSONObject) jsonObject.get("Response");
+            jsonObject = (JSONObject) ((JSONArray) jsonObject.get("View")).get(0);
+            jsonObject = (JSONObject) ((JSONArray) jsonObject.get("Result")).get(0);
+            jsonObject = (JSONObject) jsonObject.get("Location");
+            jsonObject = (JSONObject) jsonObject.get("DisplayPosition");
+            Double latitude = (Double) jsonObject.get("Latitude");
+            Double longitude = (Double) jsonObject.get("Longitude");
+            result = latitude.toString() + ", " + longitude.toString();
+        } else {
+            jsonObject = (JSONObject) ((JSONArray) jsonObject.get("items")).get(0);
+            result = (String) jsonObject.get("title");
+        }
+        return "Результат: " + result;
     }
 }
